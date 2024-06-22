@@ -8,19 +8,19 @@ import com.spectralink.API_SLK.model.entities.Order;
 import com.spectralink.API_SLK.model.entities.Product;
 import com.spectralink.API_SLK.model.entities.Staff;
 import com.spectralink.API_SLK.model.entities.Viewer;
+import com.spectralink.API_SLK.model.exception.ResourceNotFoundException;
 import com.spectralink.API_SLK.model.mapper.OrderMapper;
+import com.spectralink.API_SLK.model.mapper.ProductMapper;
 import com.spectralink.API_SLK.model.repository.OrderRepository;
 import com.spectralink.API_SLK.model.repository.ProductRepository;
 import com.spectralink.API_SLK.model.repository.StaffRepository;
 import com.spectralink.API_SLK.model.repository.ViewerRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import java.lang.Number;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Nodes.collect;
 
 @Service
 @AllArgsConstructor
@@ -31,54 +31,74 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final StaffRepository staffRepository;
     private final ViewerRepository viewerRepository;
-    
-   public OrderResponseDTO createOrder(OrderRequestDTO orderRequestDTO) {
-        Order orden = new Order();
-        orden.setCantidadProducto(orderRequestDTO.getCantidadProducto());
-        orden.setTotalProductos(orderRequestDTO.getTotalProductos());
-        orden.setEstado(orderRequestDTO.isEstado());
+    private final ProductMapper productMapper;
+
+    public OrderResponseDTO createOrder(OrderRequestDTO orderRequestDTO) {
+        Order order = new Order();
+        order.setCantidadProducto(orderRequestDTO.getCantidadProducto());
+        order.setTotalProductos(orderRequestDTO.getTotalProductos());
+        order.setEstado(orderRequestDTO.getEstado());
 
         Staff staff = staffRepository.findById(orderRequestDTO.getStaffId())
-                .orElseThrow(() -> new RuntimeException("Staff no encontrado"));
-        orden.setStaff(staff);
+                .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id "));
+        order.setStaff(staff);
 
         Viewer viewer = viewerRepository.findById(orderRequestDTO.getViewer())
-                .orElseThrow(() -> new RuntimeException("viewer no encontrado"));
-        orden.setViewer(viewer);
+                .orElseThrow(() -> new ResourceNotFoundException("Viewer not found with id "));
+        order.setViewer(viewer);
 
-        Map<Product, Integer> productos = orderRequestDTO.getProductos().stream()
-                .collect(Collectors.toMap(
-                        dto -> productRepository.findById(dto.getId()
-                                .orElseThrow(() -> new RuntimeException("Producto no encontrado")),
-                        ProductRequestDTO::getStock));
+        // Ajuste para manejo de la lista de productos y sus cantidades
+        Map<Product, Integer> productosConCantidad = new HashMap<>();
+        for (ProductRequestDTO dto : orderRequestDTO.getProductos()) {
 
-        orden.setProductos(productos);
-        Order savedOrder = orderRepository.save(orden);
+            Product product = productRepository.findById((long) productMapper.convertToEntity(dto).getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id "));
+            product.setStock(product.getStock() - dto.getStock());
+            productosConCantidad.put(product, dto.getStock());
+        }
+
+        order.setProductos(productosConCantidad);
+        Order savedOrder = orderRepository.save(order);
 
         return mapToResponseDTO(savedOrder);
     }
-
-    private OrderResponseDTO mapToResponseDTO(Order orden) {
-        List<ProductResponseDTO> productos = orden.getProductos().entrySet().stream()
-                .map(entry -> new ProductResponseDTO(
-
-                        entry.getKey().getId(),
-                        entry.getKey().getNombre(),
-                        entry.getKey().getPrecio(),
-                        entry.getKey().getDescripcion(),
-                        entry.getKey().getImagen(),
-                        entry.getKey().getStock(),
-                        orden.getId()))
-                .collect(Collectors.toList());
+    private OrderResponseDTO mapToResponseDTO(Order order) {
+        List<ProductResponseDTO> products = order.getProductos().keySet().stream()
+                .map(integer -> new ProductResponseDTO(
+                        integer.getId(),
+                        integer.getNombre(),
+                        integer.getPrecio(),
+                        integer.getDescripcion(),
+                        integer.getImagen(),
+                        integer.getStock(),
+                        order.getId()))
+                .toList();
 
         return new OrderResponseDTO(
-                orden.getId().intValue(),
-                orden.getCantidadProducto(),
-                orden.getTotalProductos(),
-                orden.getEstado(),
-                orden.getStaff().getId(),
-                orden.getViewer().getId(),
-                productos);
+                order.getId(),
+                order.getCantidadProducto(),
+                order.getTotalProductos(),
+                order.getEstado(),
+                order.getStaff().getId(),
+                order.getViewer().getId(),
+                products);
     }
+
+    public List<OrderResponseDTO> getAllOrders(){
+        List<Order> order = orderRepository.findAll();
+        return orderMapper.convertToDTO(order);
+    }
+
+    public OrderResponseDTO getByOrderID(Long id){
+        Order order = orderRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Order not found with id " + id));
+        return orderMapper.convertToDTO(order);
+    }
+
+
+
+
+
+
 
 }

@@ -8,9 +8,9 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderResponseDTO {
     private Long id;
-    private int cantidadProducto;
-    private int totalProductos;
-    private boolean estado;
+    private Integer cantidadProducto;
+    private Integer totalProductos;
+    private Boolean estado;
     private Long staffId;
     private Long viewerId;
     private List<ProductResponseDTO> productos;

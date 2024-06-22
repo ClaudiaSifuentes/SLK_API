@@ -13,7 +13,7 @@ public class ProductRequestDTO {
     private String nombre;
 
     @NotNull(message = "Precio es obligatorio")
-    private int precio;
+    private Integer precio;
 
     @NotBlank(message = "Descripción es obligatoria")
     private String descripcion;
@@ -25,5 +25,5 @@ public class ProductRequestDTO {
     private Integer stock;
 
     @NotNull(message = "ID de Orden es obligatorio")
-    private int ordenId;
+    private Long ordenId;
 }

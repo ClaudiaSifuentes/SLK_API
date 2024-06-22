@@ -13,13 +13,13 @@ import java.util.List;
 public class OrderRequestDTO {
 
     @NotNull(message = "Cantidad de productos es obligatoria")
-    private int cantidadProducto;
+    private Integer cantidadProducto;
 
     @NotNull(message = "Total de productos es obligatorio")
-    private int totalProductos;
+    private Integer totalProductos;
 
     @NotNull(message = "Estado es obligatorio")
-    private boolean estado;
+    private Boolean estado;
 
     @NotNull(message = "ID del Staff es obligatorio")
     private Long staffId;

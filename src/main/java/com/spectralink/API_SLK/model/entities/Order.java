@@ -15,13 +15,13 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @Column(nullable = false)
-    private int cantidadProducto;
+    private Integer cantidadProducto;
 
     @Column(nullable = false)
-    private int totalProductos;
+    private Integer totalProductos;
 
     @Column(nullable = false, length = 20)
     private Boolean estado;

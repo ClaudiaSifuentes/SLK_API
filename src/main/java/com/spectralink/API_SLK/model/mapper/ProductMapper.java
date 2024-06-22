@@ -15,6 +15,11 @@ public class ProductMapper {
 
     private final ModelMapper modelMapper;
 
+    public Product convertToEntitytwo(ProductRequestDTO productRequestDTO) {
+        Product product = modelMapper.map(productRequestDTO, Product.class);
+        return product;
+    }
+
     public Product convertToEntity(ProductRequestDTO productRequestDTO) {
         return modelMapper.map(productRequestDTO, Product.class);
     }
