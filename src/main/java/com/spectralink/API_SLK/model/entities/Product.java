@@ -31,6 +31,6 @@ public class Product {
     private Integer stock;
 
     @ManyToOne
-    @JoinColumn(name = "Orden_id", nullable = false)
+    @JoinColumn(name = "Orden_id", nullable = true)
     private Order orden;
 }
