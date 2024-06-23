@@ -1,4 +1,6 @@
 package com.spectralink.API_SLK.model.service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.spectralink.API_SLK.model.dto.OrderRequestDTO;
 import com.spectralink.API_SLK.model.dto.OrderResponseDTO;
@@ -8,6 +10,7 @@ import com.spectralink.API_SLK.model.entities.Order;
 import com.spectralink.API_SLK.model.entities.Product;
 import com.spectralink.API_SLK.model.entities.Staff;
 import com.spectralink.API_SLK.model.entities.Viewer;
+import com.spectralink.API_SLK.model.exception.BadRequestException;
 import com.spectralink.API_SLK.model.exception.ResourceNotFoundException;
 import com.spectralink.API_SLK.model.mapper.OrderMapper;
 import com.spectralink.API_SLK.model.mapper.ProductMapper;
@@ -32,6 +35,8 @@ public class OrderService {
     private final StaffRepository staffRepository;
     private final ViewerRepository viewerRepository;
     private final ProductMapper productMapper;
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
 
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequestDTO) {
         Order order = new Order();
@@ -47,15 +52,18 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Viewer not found with id "));
         order.setViewer(viewer);
 
-        // Ajuste para manejo de la lista de productos y sus cantidades
         Map<Product, Integer> productosConCantidad = new HashMap<>();
         for (ProductRequestDTO dto : orderRequestDTO.getProductos()) {
-
-            Product product = productRepository.findById((long) productMapper.convertToEntity(dto).getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id "));
-            product.setStock(product.getStock() - dto.getStock());
-            productosConCantidad.put(product, dto.getStock());
+            Product product = productRepository.findById(productMapper.convertToEntity(dto).getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id "));
+            if (product.getId() != null) {
+                logger.debug("Product: {}", product);
+                productosConCantidad.put(product, dto.getStock());
+            } else {
+                throw new BadRequestException("Product ID cannot be null");
+            }
         }
+
 
         order.setProductos(productosConCantidad);
         Order savedOrder = orderRepository.save(order);
